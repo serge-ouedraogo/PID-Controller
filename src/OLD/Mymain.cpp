@@ -33,27 +33,31 @@ string hasData(string s) {
 int main() {
   uWS::Hub h;
 
+  //Switches to high-speed driving
+  bool fast_furious = false;
+
   //Optimum throttle value, varies between driving modes.
   double target_throttle;
 
   PID pid_steer, pid_throttle;
 
-    //pid_steer.Init(0.07, 0.0001, 3.0);
-  
-    //pid_steer.Init(0.062, 0.00, 0.0);
-   	//pid_steer.Init(0.0, 0.00015, 0.0);
-   //pid_steer.Init(0.0, 0.0, 3.0);
-   // pid_steer.Init(0.062, 0.000015, 2.65);
-  //pid_steer.Init(0.07, 0.00001, 2.65);
-  //pid_steer.Init(0.075, 0.0001, 2.50);
-  //pid_steer.Init(0.085, 0.0001, 2.50);
-  //pid_steer.Init(0.095, 0.0001, 2.50);
-  //pid_steer.Init(0.10, 0.0001, 2.50);
-  pid_steer.Init(0.15, 0.0001, 2.50);
-  //pid_steer.Init(0.062, 0.0, 3.0);
+  if(fast_furious) {
+    std::cout << "Fast & Furious Mode Enabled!" << std::endl;
+    std::cout << "hold on to your butts..." << std::endl;
+
+    pid_steer.Init(0.07, 0.0001, 3.0);
+    pid_throttle.Init(0.2, 0.0001, 0.03);
+
+    target_throttle = 0.88;
+  } else {
+    std::cout << "Slow & Steady Mode Enabled!" << std::endl;
+
+    pid_steer.Init(0.07, 0.0001, 3.0);
+    //Throttle PID is not needed in this mode, a constant throttle will work just fine.
     pid_throttle.Init(0.0, 0.0, 0.0);
+
     target_throttle = 0.3;
- 
+  }
 
   h.onMessage([&pid_steer, &pid_throttle, &target_throttle](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
@@ -72,7 +76,7 @@ int main() {
           // j[1] is the data JSON object
           double cte = std::stod(j[1]["cte"].get<string>());
           double speed = std::stod(j[1]["speed"].get<string>());
-          //double angle = std::stod(j[1]["steering_angle"].get<string>());
+          double angle = std::stod(j[1]["steering_angle"].get<string>());
           double steer_value;
           double throttle;
 
@@ -83,6 +87,16 @@ int main() {
           //Calculate and set throttle based on target
           pid_throttle.UpdateError(cte);
           throttle = target_throttle + pid_throttle.TotalError();
+
+          //Steer harder when the vehicle is going above 75 mph to help with sharp curves
+          if(speed > 75) {
+            steer_value *= 1.5;
+
+            //Easter egg :)
+            if(speed == 88.0) {
+              std::cout << std::endl << "GREAT SCOTT!" << std::endl;
+            }
+          }
 
           //Correct for steering angles outside of the valid range -1 to 1
           if(steer_value < -1) {

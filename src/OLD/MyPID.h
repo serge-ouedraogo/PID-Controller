@@ -31,7 +31,7 @@ class PID {
    */
   double TotalError();
 
-  void Twiddle(int index, double value);
+  void Twiddler(int index, double value);
 
  private:
   /**
@@ -50,20 +50,20 @@ class PID {
 
 
   //Current step
-  int i_step;
+  int step_num;
 
   //Total steps per cycle, 'n' steps
-  int num_steps;
+  int numSteps;
 
   /**
    * Twiddle variables
    */
-  double best_error;
-  double total_error;
-  int index;
-  bool twiddle_sum;
-  bool twiddle_sub;
-  double dp[3];
+  double best_err;
+  double total_err;
+  int p_index;
+  bool p_add;
+  bool p_sub;
+  double p[3];
 };
 
 #endif  // PID_H
